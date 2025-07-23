@@ -74,3 +74,37 @@ func main() {
 	fmt.Print(cmtResp2.Sha) // Print commit SHA.
 }
 ```
+
+# Test
+This project includes tests for the `go-gituse` library.
+You can run the tests from the root of the project with the following command:
+```bash
+go test ./test
+```
+
+## Test Environment
+To run the tests, you must create a `test.env` file in the `test` directory to provide necessary environment variables.
+```env
+TEST_GIT_REPOSITORY=test_repository
+TEST_GIT_OWNER=owner_of_test_repository
+TEST_GIT_TOKEN=fine_grained_token
+TEST_GIT_AUTHOR=author_for_test_commit
+TEST_GIT_EMAIL=email_for_test_commit
+```
+
+## About the Fine-Grained Token for Testing
+The token used for testing must have the following permissions:
+- **Repository access**: All repositories (required to create and delete repositories).
+- **Content permissions**: Read and write access (required for commit creation and reading refs).
+- **Administration permissions**: Read and write access (required to create and delete repositories).
+
+## Test Details
+The test performs the following steps:
+1. **Create a private repository.**  
+    If repository creation fails, the test will terminate immediately.
+2. **Test CreateCommitByLocalDir method.**  
+    This creates a commit using files in the ./test/repo_test directory.
+3. **Test MakeCommitElementByFileData method.**  
+    It tests creating commit elements from both a string-based file content and an existing .png file.
+5. **Test CreateCommitByElement method.**  
+6. **Delete the private repository.**
