@@ -1,7 +1,7 @@
 package main
 
-// import (
-// 	service "github.com/daze-doragon/go-gituse/pkg/service"
+// import(
+// service "github.com/daze-doragon/go-gituse/pkg/service"
 // )
 
 func main() {
