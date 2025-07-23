@@ -117,6 +117,22 @@ func (gitInfo *GitInfo) IsEmptyRepository() (bool, error) {
 	return git.IsEmptyRepository()
 }
 
+func (gitInfo *GitInfo) CreatePrivateRepo() error {
+	git, err := githubapi.GetGitClient(&gitInfo.client.Token, gitInfo.client.Owner, gitInfo.client.Repository, &gitInfo.client.Branch)
+	if err != nil {
+		return err
+	}
+	return git.CreatePrivateRepo()
+}
+
+func (gitInfo *GitInfo) DeletePrivateRepo() error {
+	git, err := githubapi.GetGitClient(&gitInfo.client.Token, gitInfo.client.Owner, gitInfo.client.Repository, &gitInfo.client.Branch)
+	if err != nil {
+		return err
+	}
+	return git.DeletePrivateRepo()
+}
+
 // ローカルのパスを指定しコミットを作る。指定したパスはリポジトリのルートと認識しそれに応じたパスでコミットを作成する。
 func (gitInfo *GitInfo) CreateCommitByLocalDir(commitMsg string, localPath string) (*githubapi.CreateCommitResponse, error) {
 	commitEleList, err := MakeCommitElementListByLocalPath(localPath)
@@ -255,11 +271,12 @@ func isBase64(s string) bool {
 	if !base64Rgx.MatchString(s) {
 		return false
 	}
-	decode, err := base64.StdEncoding.DecodeString(s)
+	_, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		return false
 	}
-	return utf8.Valid(decode)
+	// return utf8.Valid(decode)	//テキストファイルじゃない場合もあるのでUTF-8チェックはしない
+	return true
 }
 
 // CommitElementからBlobData構造体を返す。elementがローカルパスを持つ場合は、対象ファイルのcontentをbinaryでBlobを作る。

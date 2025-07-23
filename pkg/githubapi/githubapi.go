@@ -218,6 +218,80 @@ func (git *GitClient) GetLatestRef() (*RefResponse, error) {
 	return ref, nil
 }
 
+func (git *GitClient) IsExistRepo() (bool, error) {
+	resp, err := git.GetRepo()
+	if err != nil {
+		return false, err
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
+func (git *GitClient) GetRepo() (*http.Response, error) {
+	endPoint := fmt.Sprintf("https://api.github.com/repos/%s/%s", git.Owner, git.Repository)
+	headerMap := make(map[string]string)
+	headerMap["Authorization"] = "Bearer " + git.Token
+	return requestSend("GET", endPoint, nil, headerMap)
+}
+
+func (git *GitClient) CreatePrivateRepo() error {
+	endPoint := "https://api.github.com/user/repos"
+	headerMap := make(map[string]string)
+	headerMap["Authorization"] = "Bearer " + git.Token
+	b := struct {
+		Name      string `json:"name"`
+		Private   bool   `json:"private"`
+		Auto_init bool   `json:"auto_init"`
+	}{
+		Name:      git.Repository,
+		Private:   true,
+		Auto_init: true,
+	}
+	bodyData, err := json.Marshal(b)
+	if err != nil {
+		return err
+	}
+	resp, err := requestSend("POST", endPoint, bytes.NewReader(bodyData), headerMap)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode == http.StatusCreated {
+		return nil
+	}
+	respData, err := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusUnprocessableEntity {
+		return errors.New("You may already have repository trying to create." + string(respData))
+	} else if resp.StatusCode == http.StatusUnauthorized {
+		return errors.New("You have to check your authorization info like token, token scope, repository name, owner name." + string(respData))
+	} else {
+		return errors.New(string(respData))
+	}
+}
+
+func (git *GitClient) DeletePrivateRepo() error {
+	endPoint := fmt.Sprintf("https://api.github.com/repos/%s/%s", git.Owner, git.Repository)
+	headerMap := make(map[string]string)
+	headerMap["Authorization"] = "Bearer " + git.Token
+	resp, err := requestSend("DELETE", endPoint, nil, headerMap)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode == http.StatusNoContent {
+		return nil
+	}
+	respData, _ := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return errors.New("Cannot delete: the repository does not exist." + string(respData))
+	} else {
+		return errors.New(string(respData))
+	}
+}
+
 func (git *GitClient) CreateBlob(blob *BlobData) (*CreateBlobResponse, error) {
 	endPoint := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/blobs", git.Owner, git.Repository)
 	headerMap := make(map[string]string)
